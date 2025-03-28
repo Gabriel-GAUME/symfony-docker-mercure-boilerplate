@@ -1,0 +1,1 @@
+Redirecting to https://unpkg.com/htmx-ext-sse@2.2.2/sse.js

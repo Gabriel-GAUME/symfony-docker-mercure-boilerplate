@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Conversation{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        Messages
+                    </div>
+                    <div class="card-body">
+                        <div class="overflow-y-auto" id="messages" style="max-height: 500px;"
+                            hx-ext="sse"
+                            sse-connect="{{mercure(topic)}}"
+                            sse-swap="message"
+
+                        >
+                            {% include 'conversation/messages.html.twig' %}
+                        </div>
+                        <hr>
+
+                        <form class="d-flex gap-3 mt-3" hx-post="{{ path('message.create')}}" hx-swap="none">
+                            <input 
+                                aria-label="Message" 
+                                class="form-control" 
+                                name="content" 
+                                placeholder="Message" 
+                                id="content" 
+                                type="text"
+                            >
+                            <input type="hidden" name="conversationId" value="{{conversation.id}}">
+                            <button class="btn btn-primary">Envoyer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{parent()}}
+
+    <script>
+        const messages = document.querySelector('#messages');
+        const userId= {{app.user.id}};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            scrollToBottom(messages)
+        });
+
+        document.body.addEventListener('htmx:sseBeforeMessage', function(e) {
+            e.preventDefault();
+
+            const json = JSON.parse(e.detail.data);
+            const authorId = json['authorId'];
+            const content = json['content'];
+
+            if(authorId == userId) {
+                document.querySelector('#content').value = '';
+            }
+
+            htmx.swap('#messages', `<message-element author-id="${authorId}" user-id="${userId}" content="${content}"></message-element`, {
+                swapStyle: 'beforeend'
+            });
+
+            scrollToBottom(messages);
+        });
+
+        function scrollToBottom(container) {
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    </script>
+
+{% endblock %}

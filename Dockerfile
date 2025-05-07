@@ -81,10 +81,13 @@ RUN rm -Rf frankenphp/
 
 # Installe les dépendances (sans --no-autoloader ni --no-scripts)
 RUN set -eux; \
-    composer install --no-cache --prefer-dist --no-dev --no-progress; \
+    composer install --no-cache --prefer-dist --no-progress; \
     mkdir -p var/cache var/log; \
-    composer dump-autoload --classmap-authoritative --no-dev; \
     composer dump-env prod; \
     composer run-script post-install-cmd; \
     chmod +x bin/console; \
+    composer clear-cache; \
+    composer install --no-dev --no-cache --prefer-dist --no-progress; \
+    composer dump-autoload --classmap-authoritative --no-dev; \
     sync
+

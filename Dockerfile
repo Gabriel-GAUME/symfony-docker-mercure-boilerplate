@@ -3,6 +3,10 @@
 # Versions
 FROM dunglas/frankenphp:1-php8.4 AS frankenphp_upstream
 
+# The different stages of this Dockerfile are meant to be built into separate images
+# https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
+# https://docs.docker.com/compose/compose-file/#target
+
 # Base FrankenPHP image
 FROM frankenphp_upstream AS frankenphp_base
 
@@ -24,21 +28,27 @@ RUN set -eux; \
         apcu \
         intl \
         opcache \
-        zip \
-        pdo_mysql
+        zip
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
 
-COPY --link frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
-COPY --link --chmod=755 frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-COPY --link frankenphp/Caddyfile /etc/caddy/Caddyfile
+# > recipes
+# > doctrine/doctrine-bundle
+RUN install-php-extensions pdo_mysql
+# < doctrine/doctrine-bundle
+# < recipes
+
+COPY frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
+COPY frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY frankenphp/Caddyfile /etc/caddy/Caddyfile
 
 ENTRYPOINT ["docker-entrypoint"]
-HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
-CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
 
-# Dev image
+HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+
+# Dev FrankenPHP image
 FROM frankenphp_base AS frankenphp_dev
 
 ENV APP_ENV=dev XDEBUG_MODE=off
@@ -46,13 +56,13 @@ ENV APP_ENV=dev XDEBUG_MODE=off
 RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 
 RUN set -eux; \
-    install-php-extensions \
-        xdebug
+    install-php-extensions xdebug
 
-COPY --link frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
-CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--watch" ]
+COPY frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
 
-# Prod image
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--watch"]
+
+# Prod FrankenPHP image
 FROM frankenphp_base AS frankenphp_prod
 
 ENV APP_ENV=prod
@@ -60,17 +70,19 @@ ENV FRANKENPHP_CONFIG="import worker.Caddyfile"
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-COPY --link frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
-COPY --link frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
+COPY frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
+COPY frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
 
-COPY --link composer.* symfony.* ./
+COPY composer.* symfony.* ./
+
+# ❌ Suppression de --no-scripts ici pour permettre l'exécution des auto-scripts Symfony
 RUN set -eux; \
-    composer install --no-cache --prefer-dist --no-autoloader --no-progress
+    composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-progress
 
-# copy sources
-COPY --link . ./
+COPY . ./
 RUN rm -Rf frankenphp/
 
+# ✅ Exécution complète des scripts post-install avec cache clear
 RUN set -eux; \
     mkdir -p var/cache var/log; \
     composer dump-autoload --classmap-authoritative --no-dev; \

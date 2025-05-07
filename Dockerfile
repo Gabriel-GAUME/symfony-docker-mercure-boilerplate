@@ -73,17 +73,15 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 COPY frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
 
-COPY composer.* symfony.* ./
-
-# ❌ Suppression de --no-scripts ici pour permettre l'exécution des auto-scripts Symfony
-RUN set -eux; \
-    composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-progress
-
+# 🔁 Copie maintenant tout le projet d'abord (y compris bin/console)
 COPY . ./
+
+# Supprime les fichiers inutiles
 RUN rm -Rf frankenphp/
 
-# ✅ Exécution complète des scripts post-install avec cache clear
+# Installe les dépendances (sans --no-autoloader ni --no-scripts)
 RUN set -eux; \
+    composer install --no-cache --prefer-dist --no-dev --no-progress; \
     mkdir -p var/cache var/log; \
     composer dump-autoload --classmap-authoritative --no-dev; \
     composer dump-env prod; \

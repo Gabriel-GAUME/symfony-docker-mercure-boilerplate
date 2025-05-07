@@ -17,6 +17,6 @@ class UserService
      */
     public function findAll(): array
     {
-        return $this->userRepository->findBy([], ['username' => 'ASC']);
+        return $this->userRepository->findBy([], ['email' => 'ASC']);
     }
 }

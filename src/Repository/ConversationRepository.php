@@ -28,6 +28,15 @@ class ConversationRepository extends ServiceEntityRepository
         ->getOneOrNullResult();
     }
 
+    public function findByUser(User $user): Array
+    {
+        return $this->createQueryBuilder('c')
+        ->where(':user MEMBER OF c.users')
+        ->setParameter('user', $user)
+        ->getQuery()
+        ->getResult();
+    }
+
     public function save(Conversation $conversation): void
     {
         $this->getEntityManager()->persist($conversation);

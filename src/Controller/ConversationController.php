@@ -12,6 +12,7 @@ use App\Service\TopicService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mercure\Authorization;
 use Symfony\Component\Mercure\Discovery;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 final class ConversationController extends AbstractController
 {
@@ -26,8 +27,8 @@ final class ConversationController extends AbstractController
     }
 
 
-    #[Route('/conversation/users/{recipient}', name: 'conversation.show')]
-    public function show(?User $recipient, Request $request): Response
+    #[Route('/api/conversation/{recipient}', name: 'conversation.show')]
+    public function show(?User $recipient, Request $request): JsonResponse
     {
         $sender = $this->getUser();
 
@@ -43,9 +44,19 @@ final class ConversationController extends AbstractController
 
         $this->authorization->setCookie($request, [$topic]);
 
-        return $this->render('conversation/show.html.twig', [
+        return $this->json([
             'conversation' => $conversation,
             'topic' => $this->topicService->getTopicUrl($conversation),
-        ]);
+        ], 200, [], ['groups' => 'conversation:read']);
+    }
+
+    #[Route('/api/conversations', name: 'get_all_conversatio')]
+    public function getAllConversations(): JsonResponse
+    {
+        $user = $this->getUser();
+
+        $conversations = $this->conversationRepository->findByUser($user);
+
+        return $this->json($conversations, 200, [], ['groups' => 'conversation:read']);
     }
 }

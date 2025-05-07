@@ -44,6 +44,12 @@
 	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
 
+	# ⚠️ Gérer les assets statiques de /api (comme Swagger UI)
+	handle_path /api/* {
+		try_files {path} /index.php?{query}
+		file_server
+	}
+
 	@phpRoute {
 		not path /.well-known/mercure*
 		not file {path}

@@ -30,6 +30,7 @@
         "symfony/form": "7.2.*",
         "symfony/framework-bundle": "7.2.*",
         "symfony/mercure-bundle": "^0.3.9",
+        "symfony/monolog-bundle": "^3.0",
         "symfony/property-access": "7.2.*",
         "symfony/property-info": "7.2.*",
         "symfony/runtime": "7.2.*",
@@ -96,7 +97,6 @@
     "require-dev": {
         "symfony/debug-bundle": "7.2.*",
         "symfony/maker-bundle": "^1.62",
-        "symfony/monolog-bundle": "^3.0",
         "symfony/stopwatch": "7.2.*",
         "symfony/web-profiler-bundle": "7.2.*"
     }

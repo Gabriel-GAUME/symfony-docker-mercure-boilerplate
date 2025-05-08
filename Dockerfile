@@ -3,10 +3,6 @@
 # Versions
 FROM dunglas/frankenphp:1-php8.4 AS frankenphp_upstream
 
-# The different stages of this Dockerfile are meant to be built into separate images
-# https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
-# https://docs.docker.com/compose/compose-file/#target
-
 # Base FrankenPHP image
 FROM frankenphp_upstream AS frankenphp_base
 
@@ -73,13 +69,13 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 COPY frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
 
-# 🔁 Copie maintenant tout le projet d'abord (y compris bin/console)
+# 🔁 Copie tout le projet
 COPY . ./
 
 # Supprime les fichiers inutiles
 RUN rm -Rf frankenphp/
 
-# Installe les dépendances (sans --no-autoloader ni --no-scripts)
+# Installe les dépendances Symfony
 RUN set -eux; \
     composer install --no-cache --prefer-dist --no-progress; \
     mkdir -p var/cache var/log; \
@@ -91,3 +87,8 @@ RUN set -eux; \
     composer dump-autoload --classmap-authoritative --no-dev; \
     sync
 
+# ✅ Ajout du script d'attente pour MySQL
+COPY docker/wait-for-it.sh /usr/local/bin/wait-for-it.sh
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
+CMD ["wait-for-it.sh", "database", "3306", "--", "frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]

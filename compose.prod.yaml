@@ -6,33 +6,50 @@ services:
       context: .
       target: frankenphp_prod
     environment:
-      APP_SECRET: ${APP_SECRET}
-      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
-      MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
+      APP_ENV: prod
+    depends_on:
+      database:
+        condition: service_healthy
     volumes:
-      - ./public:/app/public:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - ./var:/app/var
+    networks:
+      - internal
+
+  database:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - internal
 
   caddy:
     image: dunglas/frankenphp
-    restart: unless-stopped
     depends_on:
       - php
     ports:
       - "80:80"
       - "443:443"
-    environment:
-      SERVER_NAME: ${SERVER_NAME}
-      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
-      MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
-      APP_SECRET: ${APP_SECRET}
     volumes:
-      - ./public:/app/public:ro
-      - ./frankenphp/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./public:/app/public
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      - internal
 
 volumes:
+  db_data:
   caddy_data:
   caddy_config:
+
+networks:
+  internal:

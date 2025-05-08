@@ -1,14 +1,14 @@
 {
+	# Global configuration block — doit être en tout premier
 	{$CADDY_GLOBAL_OPTIONS}
-
-	frankenphp {
-		{$FRANKENPHP_CONFIG}
-	}
 }
+
+{$CADDY_EXTRA_CONFIG}
 
 {$SERVER_NAME:localhost} {
 	log {
 		{$CADDY_SERVER_LOG_OPTIONS}
+		# Redact the authorization query parameter that can be set by Mercure
 		format filter {
 			request>uri query {
 				replace authorization REDACTED
@@ -19,20 +19,35 @@
 	root * /app/public
 	encode zstd br gzip
 
+	php {
+		# Config spécifique à FrankenPHP, remplace php_fastcgi
+		# Le bloc frankenphp est utilisé ici selon la doc de FrankenPHP
+		# cf. https://frankenphp.dev/docs/caddy/
+	}
+
 	mercure {
+		# Transport to use (default to Bolt)
 		transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
+		# Publisher JWT key
 		publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
+		# Subscriber JWT key
 		subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
+		# Allow anonymous subscribers (double-check that it's what you want)
 		anonymous
+		# Enable the subscription API (double-check that it's what you want)
 		subscriptions
+		# Extra directives
 		{$MERCURE_EXTRA_DIRECTIVES}
 	}
 
 	vulcain
 
 	{$CADDY_SERVER_EXTRA_DIRECTIVES}
+
+	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
 
+	# ⚠️ Gérer les assets statiques de /api (comme Swagger UI)
 	handle_path /api/* {
 		try_files {path} /index.php?{query}
 		file_server
@@ -42,9 +57,9 @@
 		not path /.well-known/mercure*
 		not file {path}
 	}
-	rewrite @phpRoute index.php
+	rewrite @phpRoute /index.php
 
-	@frontController path index.php
+	@frontController path /index.php
 	php @frontController
 
 	file_server {

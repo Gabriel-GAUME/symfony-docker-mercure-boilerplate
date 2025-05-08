@@ -1,4 +1,28 @@
-worker {
-	file ./public/index.php
-	env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
+{
+	# Caddy global options
+	auto_https off
+}
+
+# Application Symfony via FrankenPHP
+:80 {
+	root * /app/public
+	php_autoindex
+	encode gzip
+
+	route {
+		# Serve the Symfony app
+		file_server
+		php_fastcgi worker {
+			root /app/public
+			env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
+		}
+
+		# Mercure Hub
+		mercure {
+			publisher_jwt_key 'A9jd3k2Dg3sA/+vYtRZ1M3U/zj4KFqOEOi/XrEoGkRM='
+			subscriber_jwt_key 'A9jd3k2Dg3sA/+vYtRZ1M3U/zj4KFqOEOi/XrEoGkRM='
+			allow_anonymous
+			# You can also add: cors_origins *
+		}
+	}
 }

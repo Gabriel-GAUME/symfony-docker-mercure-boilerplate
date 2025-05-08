@@ -1,4 +1,5 @@
-# Production environment override
+version: '3.8'
+
 services:
   php:
     build:
@@ -8,3 +9,30 @@ services:
       APP_SECRET: ${APP_SECRET}
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
+    volumes:
+      - ./public:/app/public:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  caddy:
+    image: dunglas/frankenphp
+    restart: unless-stopped
+    depends_on:
+      - php
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SERVER_NAME: ${SERVER_NAME}
+      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
+      APP_SECRET: ${APP_SECRET}
+    volumes:
+      - ./public:/app/public:ro
+      - ./frankenphp/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

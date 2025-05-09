@@ -1,4 +1,4 @@
-http://51.210.177.185 {
+:80 {
     log {
         format filter {
             request>uri query {
@@ -42,7 +42,7 @@ http://51.210.177.185 {
     file_server {
         hide *.php
     }
-}
 
-# Cette directive permet de supprimer la redirection automatique vers HTTPS.
-# Vous pouvez également gérer la redirection HTTPS manuellement si nécessaire
+    # Désactiver le HTTPS automatique de Caddy
+    auto_https off
+}

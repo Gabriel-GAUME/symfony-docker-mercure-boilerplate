@@ -93,4 +93,4 @@ RUN set -eux; \
 COPY docker/wait-for-it.sh /usr/local/bin/wait-for-it.sh
 RUN chmod +x /usr/local/bin/wait-for-it.sh
 
-CMD ["wait-for-it.sh", "database", "3306", "--", "frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+CMD sh -c "wait-for-it.sh database:3306 -- frankenphp run --config /etc/caddy/Caddyfile"

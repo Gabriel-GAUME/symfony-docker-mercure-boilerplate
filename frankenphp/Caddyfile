@@ -1,45 +1,48 @@
-http://{$SERVER_NAME:localhost} {
-	log {
-		format filter {
-			request>uri query {
-				replace authorization REDACTED
-			}
-		}
-	}
+http://51.210.177.185 {
+    log {
+        format filter {
+            request>uri query {
+                replace authorization REDACTED
+            }
+        }
+    }
 
-	root * /app/public
-	encode zstd br gzip
+    root * /app/public
+    encode zstd br gzip
 
-	php {
-		root /app/public
-	}
+    php {
+        root /app/public
+    }
 
-	mercure {
-		publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} HS256
-		subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} HS256
-		anonymous
-		subscriptions
-	}
+    mercure {
+        publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} HS256
+        subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} HS256
+        anonymous
+        subscriptions
+    }
 
-	vulcain
+    vulcain
 
-	header ?Permissions-Policy "browsing-topics=()"
+    header ?Permissions-Policy "browsing-topics=()"
 
-	handle_path /api/* {
-		try_files {path} /index.php?{query}
-		file_server
-	}
+    handle_path /api/* {
+        try_files {path} /index.php?{query}
+        file_server
+    }
 
-	@phpRoute {
-		not path /.well-known/mercure*
-		not file {path}
-	}
-	rewrite @phpRoute /index.php
+    @phpRoute {
+        not path /.well-known/mercure*
+        not file {path}
+    }
+    rewrite @phpRoute /index.php
 
-	@frontController path /index.php
-	php @frontController
+    @frontController path /index.php
+    php @frontController
 
-	file_server {
-		hide *.php
-	}
+    file_server {
+        hide *.php
+    }
 }
+
+# Cette directive permet de supprimer la redirection automatique vers HTTPS.
+# Vous pouvez également gérer la redirection HTTPS manuellement si nécessaire

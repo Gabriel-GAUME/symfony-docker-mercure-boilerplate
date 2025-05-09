@@ -15,9 +15,6 @@ http://{$SERVER_NAME:localhost} {
 	}
 
 	mercure {
-		# La directive `transport_url` est dépréciée
-		# Par défaut, le transport "bolt" est utilisé via /data/mercure.db
-		# On peut aussi ajouter explicitement : transport "bolt"
 		publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} HS256
 		subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} HS256
 		anonymous

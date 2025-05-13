@@ -9,7 +9,7 @@ services:
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
     ports:
       - "80:80"
-      - "443:443"
+      - "8443:443"
     volumes:
       - database_data:/var/lib/mysql:rw
 

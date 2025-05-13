@@ -59,17 +59,16 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 COPY frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
 
-# Install Node.js & Yarn for frontend build
+# Install Node.js for frontend build
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install -g yarn
+    apt-get install -y nodejs
 
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
 COPY assets ./assets
 COPY webpack.config.js ./
-RUN yarn build
+RUN npm run build
 
 COPY composer.* symfony.* ./
 RUN set -eux; \

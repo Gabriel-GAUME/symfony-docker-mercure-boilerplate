@@ -8,7 +8,7 @@
 
 {$CADDY_EXTRA_CONFIG}
 
-51.210.177.185 {
+51.210.177.185:80 {  # Assure-toi que Caddy écoute uniquement sur le port HTTP 80
 	log {
 		{$CADDY_SERVER_LOG_OPTIONS}
 		# Redact the authorization query parameter that can be set by Mercure
@@ -63,6 +63,6 @@
 		hide *.php
 	}
 
-	# Pour ladresse IP, utilise un certificat SSL interne
-	#tls internal
+	# Suppression de la ligne tls pour forcer HTTP uniquement
+	# tls internal
 }

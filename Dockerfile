@@ -1,70 +1,53 @@
 #syntax=docker/dockerfile:1
 
-# Versions
 FROM dunglas/frankenphp:1-php8.4 AS frankenphp_upstream
 
-# Base FrankenPHP image
 FROM frankenphp_upstream AS frankenphp_base
 
 WORKDIR /app
 
 VOLUME /app/var/
 
-# Dépendances système utiles
 RUN apt-get update && apt-get install -y --no-install-recommends \
-	acl \
-	file \
-	gettext \
-	git \
-	curl \
-	&& rm -rf /var/lib/apt/lists/*
+    acl \
+    file \
+    gettext \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Extensions PHP nécessaires
 RUN set -eux; \
-	install-php-extensions \
-		@composer \
-		apcu \
-		intl \
-		opcache \
-		zip \
-	;
+    install-php-extensions \
+        @composer \
+        apcu \
+        intl \
+        opcache \
+        zip \
+        pdo_mysql
 
-# Composer config
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
 
-###> doctrine/doctrine-bundle ###
-RUN install-php-extensions pdo_mysql
-###< doctrine/doctrine-bundle ###
-
-# Configuration PHP & Caddy
-COPY --link frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
-COPY --link --chmod=755 frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-COPY --link frankenphp/Caddyfile /etc/caddy/Caddyfile
+COPY frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
+COPY frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY frankenphp/Caddyfile /etc/caddy/Caddyfile
 
 ENTRYPOINT ["docker-entrypoint"]
-
 HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
 
-# ---------------------------
-# Dev FrankenPHP image
 # ---------------------------
 FROM frankenphp_base AS frankenphp_dev
 
 ENV APP_ENV=dev XDEBUG_MODE=off
 
 RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+RUN set -eux; install-php-extensions xdebug
 
-RUN set -eux; \
-	install-php-extensions xdebug
-
-COPY --link frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
+COPY frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
 
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--watch" ]
 
-# ---------------------------
-# Prod FrankenPHP image
 # ---------------------------
 FROM frankenphp_base AS frankenphp_prod
 
@@ -73,37 +56,31 @@ ENV FRANKENPHP_CONFIG="import worker.Caddyfile"
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-COPY --link frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
-COPY --link frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
+COPY frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
+COPY frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
 
-# Node.js pour builder le frontend
+# Install Node.js & Yarn for frontend build
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g yarn
 
-# Installer les dépendances JS pour builder Vue.js
-COPY --link package.json yarn.lock ./
+COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
-# Copier les assets frontend et builder
-COPY --link assets ./assets
-COPY --link webpack.config.js ./
+COPY assets ./assets
+COPY webpack.config.js ./
 RUN yarn build
 
-# Installation des dépendances Symfony
-COPY --link composer.* symfony.* ./
+COPY composer.* symfony.* ./
 RUN set -eux; \
-	composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
+    composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
-# Copier le reste de l'application Symfony
-COPY --link . ./
+COPY . ./
 RUN rm -Rf frankenphp/
 
-# Finalisation Symfony
 RUN set -eux; \
-	mkdir -p var/cache var/log; \
-	composer dump-autoload --classmap-authoritative --no-dev; \
-	composer dump-env prod; \
-	composer run-script --no-dev post-install-cmd; \
-	chmod +x bin/console; \
-	sync
+    mkdir -p var/cache var/log; \
+    composer dump-autoload --classmap-authoritative --no-dev; \
+    composer dump-env prod; \
+    composer run-script --no-dev post-install-cmd; \
+    chmod +x bin/console; sync

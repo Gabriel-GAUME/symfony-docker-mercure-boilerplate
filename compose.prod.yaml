@@ -1,4 +1,7 @@
+version: "3.8"
+
 services:
+  # Service PHP (modifié pour refléter l'usage de Caddy en tant que reverse proxy)
   php:
     build:
       context: .
@@ -7,17 +10,49 @@ services:
       APP_SECRET: ${APP_SECRET}
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
-    ports:
-      - "8081:80"
-      - "8443:443"
     volumes:
       - database_data:/var/lib/mysql:rw
+    expose:
+      - "80"  # Expose uniquement le port 80 pour le réseau interne Docker
 
+  # Service PHPMyAdmin
   phpmyadmin:
     image: phpmyadmin:latest
     restart: unless-stopped
     environment:
       PMA_HOST: database
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    expose:
+      - "80"  # Expose uniquement le port 80 pour le réseau interne Docker
+
+  # Service Caddy (ajouté pour gérer le reverse proxy HTTP)
+  caddy:
+    image: caddy:latest
+    container_name: caddy
     ports:
-      - "8080:80"
+      - "80:80"  # Expose uniquement le port 80 sur l'hôte (pas de HTTPS)
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile  # Chemin vers ton Caddyfile personnalisé
+      - ./data:/data  # Stockage des données persistantes pour Caddy
+      - ./config:/config  # Stockage de la configuration persistante
+    networks:
+      - default
+    depends_on:
+      - php
+      - phpmyadmin  # Assure-toi que PHP et PHPMyAdmin démarrent avant Caddy
+    restart: always
+
+  # Base de données MySQL
+  database:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - database_data:/var/lib/mysql
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  database_data:

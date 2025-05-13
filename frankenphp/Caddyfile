@@ -1,68 +1,45 @@
-{
-	{$CADDY_GLOBAL_OPTIONS}
+51.210.177.185 {
+    log {
+        format filter {
+            request>uri query {
+                replace authorization REDACTED
+            }
+        }
+    }
 
-	frankenphp {
-		{$FRANKENPHP_CONFIG}
-	}
-}
+    root /app/public
+    encode zstd br gzip
 
-{$CADDY_EXTRA_CONFIG}
+    mercure {
+        transport_url bolt:///data/mercure.db
+        publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
+        subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
+        anonymous
+        subscriptions
+    }
 
-51.210.177.185:80 {  # Assure-toi que Caddy écoute uniquement sur le port HTTP 80
-	log {
-		{$CADDY_SERVER_LOG_OPTIONS}
-		# Redact the authorization query parameter that can be set by Mercure
-		format filter {
-			request>uri query {
-				replace authorization REDACTED
-			}
-		}
-	}
+    vulcain
 
-	root /app/public
-	encode zstd br gzip
+    # Désactive Topics tracking si non activé
+    header ?Permissions-Policy "browsing-topics=()"
 
-	mercure {
-		# Transport to use (default to Bolt)
-		transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
-		# Publisher JWT key
-		publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
-		# Subscriber JWT key
-		subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
-		# Allow anonymous subscribers (double-check that its what you want)
-		anonymous
-		# Enable the subscription API (double-check that its what you want)
-		subscriptions
-		# Extra directives
-		{$MERCURE_EXTRA_DIRECTIVES}
-	}
+    handle_path /api/* {
+        try_files {path} /index.php?{query}
+        file_server
+    }
 
-	vulcain
+    @phpRoute {
+        not path /.well-known/mercure*
+        not file {path}
+    }
+    rewrite @phpRoute index.php
 
-	{$CADDY_SERVER_EXTRA_DIRECTIVES}
+    @frontController path index.php
+    php @frontController
 
-	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
-	header ?Permissions-Policy "browsing-topics=()"
+    file_server {
+        hide *.php
+    }
 
-	# ⚠️ Gérer les assets statiques de /api (comme Swagger UI)
-	handle_path /api/* {
-		try_files {path} /index.php?{query}
-		file_server
-	}
-
-	@phpRoute {
-		not path /.well-known/mercure*
-		not file {path}
-	}
-	rewrite @phpRoute index.php
-
-	@frontController path index.php
-	php @frontController
-
-	file_server {
-		hide *.php
-	}
-
-	# Suppression de la ligne tls pour forcer HTTP uniquement
-	# tls internal
+    tls internal
 }

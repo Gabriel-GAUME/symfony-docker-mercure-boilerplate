@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  # Service PHP (modifié pour refléter l'usage de Caddy en tant que reverse proxy)
+  # Service PHP
   php:
     build:
       context: .

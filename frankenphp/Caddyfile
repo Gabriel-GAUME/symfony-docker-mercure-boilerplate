@@ -12,6 +12,9 @@
 {$CADDY_EXTRA_CONFIG}
 
 51.210.177.185 {
+    # Désactiver explicitement le TLS/SSL
+    tls off
+
     # Désactiver la redirection automatique vers HTTPS
     redir https://{host}{uri} 301
 

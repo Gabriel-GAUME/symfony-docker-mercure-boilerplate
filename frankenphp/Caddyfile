@@ -64,5 +64,5 @@
 	}
 
 	# Pour ladresse IP, utilise un certificat SSL interne
-	tls internal
+	#tls internal
 }

@@ -3,7 +3,7 @@ services:
     image: php:8.3-fpm
     restart: unless-stopped
     environment:
-      SERVER_NAME: ${SERVER_NAME:-localhost}, php:80
+      SERVER_NAME: ${SERVER_NAME:-localhost}
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
       DATABASE_URL: "mysql://app:root@database:3306/app?serverVersion=8&charset=utf8mb4"

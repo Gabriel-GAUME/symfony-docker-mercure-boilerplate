@@ -1,24 +1,15 @@
 {
-    # Désactiver lauto-HTTPS globalement
-    auto_https off
-
+    email gabriel.gaume@gmail.com
+    # Active lauto HTTPS
+    auto_https on
+    acme_ca https://acme-v02.api.letsencrypt.org/directory
     {$CADDY_GLOBAL_OPTIONS}
-
-    frankenphp {
-        {$FRANKENPHP_CONFIG}
-    }
 }
 
-{$CADDY_EXTRA_CONFIG}
-
-http://51.210.177.185 {
+gabrielgaume.site {
     log {
-        {$CADDY_SERVER_LOG_OPTIONS}
-        format filter {
-            request>uri query {
-                replace authorization REDACTED
-            }
-        }
+        output stdout
+        format console
     }
 
     root * /app/public

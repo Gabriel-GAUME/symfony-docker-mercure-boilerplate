@@ -30,17 +30,19 @@ services:
     image: caddy:latest
     container_name: caddy
     ports:
-      - "80:80"  # Expose uniquement le port 80 sur l'hôte (pas de HTTPS)
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile  # Chemin vers ton Caddyfile personnalisé
-      - ./data:/data  # Stockage des données persistantes pour Caddy
-      - ./config:/config  # Stockage de la configuration persistante
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./data:/data
+      - ./config:/config
     networks:
       - default
     depends_on:
       - php
-      - phpmyadmin  # Assure-toi que PHP et PHPMyAdmin démarrent avant Caddy
+      - phpmyadmin
     restart: always
+
 
   # Base de données MySQL
   database:

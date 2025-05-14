@@ -12,11 +12,6 @@ services:
       MERCURE_URL: ${MERCURE_URL:-http://php/.well-known/mercure}
       MERCURE_PUBLIC_URL: ${MERCURE_PUBLIC_URL:-https://${SERVER_NAME:-localhost}/.well-known/mercure}
       MERCURE_JWT_SECRET: ${MERCURE_JWT_SECRET:-A9jd3k2Dg3sA/+vYtRZ1M3U/zj4KFqOEOi/XrEoGkRM=}
-      MERCURE_COOKIE_DOMAIN: ${MERCURE_COOKIE_DOMAIN:-gabrielgaume.site}
-      # Directive supplémentaire pour Mercure
-      MERCURE_EXTRA_DIRECTIVES: |
-        cors_origins https://gabrielgaume.site
-        cookie_domain gabrielgaume.site
     volumes:
       - caddy_data:/data
       - caddy_config:/config

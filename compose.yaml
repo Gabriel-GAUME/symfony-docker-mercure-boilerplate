@@ -37,7 +37,7 @@ services:
   database:
     image: mysql:${MYSQL_VERSION:-8}
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
       # You should definitely change the password in production
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
       MYSQL_USER: ${MYSQL_USER:-root}

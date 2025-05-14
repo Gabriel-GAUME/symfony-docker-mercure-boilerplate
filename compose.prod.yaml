@@ -27,21 +27,21 @@ services:
 
   # Service Caddy (ajouté pour gérer le reverse proxy HTTP)
   caddy:
-    image: caddy:latest
-    container_name: caddy
-    ports:
+     image: dunglas/frankenphp
+     depends_on:
+      - php
+     ports:
       - "80:80"
       - "443:443"
-    volumes:
-       - ./public:/app/public
-       - caddy_data:/data
-       - caddy_config:/config
-    networks:
-      - default
-    depends_on:
-      - php
-      - phpmyadmin
-    restart: always
+     environment:
+      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_JWT_SECRET}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_JWT_SECRET}
+     volumes:
+      - ./public:/app/public
+      - caddy_data:/data
+      - caddy_config:/config
+     networks:
+      - internal
 
 
   # Base de données MySQL

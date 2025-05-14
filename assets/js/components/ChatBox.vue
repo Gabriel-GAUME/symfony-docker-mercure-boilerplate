@@ -64,7 +64,7 @@ export default {
     initSSE() {
       console.log(this.topic)
       const topic = this.topic; // adapte l’URL à ton topic
-      const url = new URL('https://localhost/.well-known/mercure'); // adapte selon ta config
+      const url = new URL('https://gabrielgaume.site/.well-known/mercure'); // adapte selon ta config
       url.searchParams.append('topic', topic);
 
       this.eventSource = new EventSource(url, { withCredentials: true });

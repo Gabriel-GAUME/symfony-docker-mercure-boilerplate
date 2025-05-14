@@ -1,19 +1,23 @@
 {
-    email gabriel.gaume@gmail.com
-    # Active lauto HTTPS
-    auto_https on
-    acme_ca https://acme-v02.api.letsencrypt.org/directory
-    {$CADDY_GLOBAL_OPTIONS}
+    # Global options
+    email your@email.com  # remplace par ton adresse pour les notifications Lets Encrypt
+    # Optional: tu peux activer les logs ici si tu veux
+    # debug
 }
 
 gabrielgaume.site {
+    root * /app/public
+    encode zstd br gzip
+
+    php_fastcgi php:9000
+    file_server
+
     log {
         output stdout
         format console
     }
 
-    root * /app/public
-    encode zstd br gzip
+    header ?Permissions-Policy "browsing-topics=()"
 
     mercure {
         transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
@@ -25,10 +29,6 @@ gabrielgaume.site {
     }
 
     vulcain
-
-    {$CADDY_SERVER_EXTRA_DIRECTIVES}
-
-    header ?Permissions-Policy "browsing-topics=()"
 
     handle_path /api/* {
         try_files {path} /index.php?{query}

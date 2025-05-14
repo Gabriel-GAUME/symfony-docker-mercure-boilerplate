@@ -1,4 +1,5 @@
 services:
+  # Ton service PHP
   php:
     image: ${IMAGES_PREFIX:-}app-php
     restart: unless-stopped
@@ -6,9 +7,7 @@ services:
       SERVER_NAME: ${SERVER_NAME:-localhost}, php:80
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-A9jd3k2Dg3sA/+vYtRZ1M3U/zj4KFqOEOi/XrEoGkRM=}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-A9jd3k2Dg3sA/+vYtRZ1M3U/zj4KFqOEOi/XrEoGkRM=}
-      # Run "composer require symfony/orm-pack" to install and configure Doctrine ORM
       DATABASE_URL: mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-root}@database:3306/${MYSQL_DATABASE:-app}?serverVersion=${MYSQL_VERSION:-8}&charset=utf8mb4
-      # Run "composer require symfony/mercure-bundle" to install and configure the Mercure integration
       MERCURE_URL: ${CADDY_MERCURE_URL:-http://php/.well-known/mercure}
       MERCURE_PUBLIC_URL: ${CADDY_MERCURE_PUBLIC_URL:-https://${SERVER_NAME:-localhost}:${HTTPS_PORT:-443}/.well-known/mercure}
       MERCURE_JWT_SECRET: ${CADDY_MERCURE_JWT_SECRET:-A9jd3k2Dg3sA/+vYtRZ1M3U/zj4KFqOEOi/XrEoGkRM=}
@@ -16,32 +15,36 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     ports:
-      # HTTP
       - target: 80
         published: ${HTTP_PORT:-80}
         protocol: tcp
-      # HTTPS
       - target: 443
         published: ${HTTPS_PORT:-443}
         protocol: tcp
-      # HTTP/3
       - target: 443
         published: ${HTTP3_PORT:-443}
         protocol: udp
 
-# Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
-###> symfony/mercure-bundle ###
-###< symfony/mercure-bundle ###
+  # Service Node.js pour compiler les assets
+  frontend:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npm run build"
+    depends_on:
+      - php
+    environment:
+      NODE_ENV: production
 
-###> doctrine/doctrine-bundle ###
+  # Ton service database
   database:
     image: mysql:${MYSQL_VERSION:-8}
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
-      # You should definitely change the password in production
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
       MYSQL_USER: ${MYSQL_USER:-app}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root} 
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-u", "app", "-p${MYSQL_PASSWORD}"]
       timeout: 5s
@@ -50,16 +53,8 @@ services:
     volumes:
       - database_data:/var/lib/mysql:rw
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
 
 volumes:
   caddy_data:
   caddy_config:
-###> symfony/mercure-bundle ###
-###< symfony/mercure-bundle ###
-
-###> doctrine/doctrine-bundle ###
   database_data:
-###< doctrine/doctrine-bundle ###

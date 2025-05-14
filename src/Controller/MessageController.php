@@ -42,6 +42,8 @@ final class MessageController extends AbstractController
             private: true
         );
 
+        dd($update);
+
         $this->hub->publish($update);
 
 

@@ -1,60 +1,10 @@
-version: "3.8"
-
+# Production environment override
 services:
-  # Service PHP
   php:
     build:
       context: .
       target: frankenphp_prod
     environment:
       APP_SECRET: ${APP_SECRET}
-      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_JWT_SECRET}
-      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_JWT_SECRET}
-    volumes:
-      - database_data:/var/lib/mysql:rw
-    expose:
-      - "80"  # Expose uniquement le port 80 pour le réseau interne Docker
-
-  # Service PHPMyAdmin
-  phpmyadmin:
-    image: phpmyadmin:latest
-    restart: unless-stopped
-    environment:
-      PMA_HOST: database
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-    expose:
-      - "80"  # Expose uniquement le port 80 pour le réseau interne Docker
-
-  # Service Caddy (ajouté pour gérer le reverse proxy HTTP)
-  caddy:
-     image: dunglas/frankenphp
-     depends_on:
-      - php
-     ports:
-      - "80:80"
-      - "443:443"
-     environment:
-      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_JWT_SECRET}
-      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_JWT_SECRET}
-     volumes:
-      - ./public:/app/public
-      - caddy_data:/data
-      - caddy_config:/config
-     networks:
-      - internal
-
-
-  # Base de données MySQL
-  database:
-    image: mysql:8
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - database_data:/var/lib/mysql
-
-networks:
-  default:
-    driver: bridge
-
-volumes:
-  database_data:
+      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}

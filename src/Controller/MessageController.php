@@ -39,10 +39,8 @@ final class MessageController extends AbstractController
         $update = new Update(
             topics: $this->topicService->getTopicUrl($conversation),
             data: json_encode($data),
-            private: true
+            private: false
         );
-
-        dd($update);
 
         $this->hub->publish($update);
 
